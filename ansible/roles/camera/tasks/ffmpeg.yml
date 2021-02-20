@@ -1,0 +1,23 @@
+---
+
+- name: Install ffmpeg
+  become: yes
+  apt:
+    name: ffmpeg
+    state: present
+
+- name: Copy the systemd service file
+  template:
+    src: systemd/ffmpeg.service.j2
+    dest: /etc/systemd/system/ffmpeg.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable ffmpeg service
+  become: true
+  systemd:
+    name: ffmpeg
+    state: restarted
+    enabled: true
+    daemon_reload: true

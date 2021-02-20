@@ -1,0 +1,19 @@
+---
+
+- name: Ensure we mount /tmp in memory
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^tmpfs /tmp'
+    line: 'tmpfs /tmp tmpfs defaults,noatime,nosuid,size=10m 0 0'
+
+- name: Ensure we mount /var/tmp in memory
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^tmpfs /var/tmp'
+    line: 'tmpfs /var/tmp tmpfs defaults,noatime,nosuid,size=10m 0 0'
+
+- name: Ensure we mount /var/log in memory
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^tmpfs /var/log'
+    line: 'tmpfs /var/log tmpfs defaults,noatime,nosuid,mode=0755,size=10m 0 0'

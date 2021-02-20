@@ -1,0 +1,29 @@
+[Unit]
+Description=FFmpeg
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ ffmpeg_user }}
+Group={{ ffmpeg_group }}
+Type=simple
+ExecStart=/usr/bin/ffmpeg -f video4linux2        \
+                          -input_format h264     \
+                          -video_size 800x600    \
+                          -i /dev/video0         \
+                          -framerate 30          \
+                          -c:v h264_omx          \
+                          -preset medium         \
+                          -b:v 256k              \
+                          -maxrate 256k          \
+                          -bufsize 2048k         \
+                          -g 60                  \
+                          -an                    \
+                          -strict experimental   \
+                          -f flv                 \
+                          "rtmp://{{ servers[0] }}:1935/live/pi"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

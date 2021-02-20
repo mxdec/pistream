@@ -1,0 +1,49 @@
+---
+
+- name: Check if nginx is already installed
+  stat:
+    path: /usr/local/nginx/conf/nginx.conf
+  register: nginx_installed
+
+- name: Compile and install nginx with rtmp module
+  become: yes
+  block:
+  - name: Ensure nginx directories exists
+    file:
+      state: directory
+      path: "{{ item }}"
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_group }}"
+      mode: "755"
+    with_items:
+    - "{{ nginx_dir_log }}"
+    - "{{ nginx_dir_rec }}"
+    - /tmp/build/dir
+  - name: Clone nginx module
+    git:
+      repo: https://github.com/arut/nginx-rtmp-module.git
+      dest: /tmp/build/dir/nginx-rtmp-module
+  - name: Clone nginx
+    git:
+      repo: https://github.com/nginx/nginx.git
+      dest: /tmp/build/dir/nginx
+  - name: Compile nginx with module
+    shell: ./auto/configure --add-module=../nginx-rtmp-module
+    args:
+      chdir: /tmp/build/dir/nginx
+  - name: Install nginx with module
+    shell: make install
+    args:
+      chdir: /tmp/build/dir/nginx
+  when: not nginx_installed.stat.exists
+
+- name: Upload nginx config file
+  template:
+    src: "nginx/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: '644'
+  with_items:
+  - src: "nginx.conf.j2"
+    dest: "/usr/local/nginx/conf/nginx.conf"

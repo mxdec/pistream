@@ -1,0 +1,17 @@
+---
+
+- name: Copy the systemd service files
+  template:
+    src: systemd/nginx.service.j2
+    dest: /etc/systemd/system/nginx.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable nginx service
+  become: true
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: true
+    daemon_reload: true

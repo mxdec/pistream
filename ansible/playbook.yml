@@ -1,0 +1,12 @@
+---
+
+- hosts: 'cameras'
+  become: yes
+  roles:
+  - camera
+
+- hosts: 'servers'
+  become: yes
+  roles:
+  - common
+  - server

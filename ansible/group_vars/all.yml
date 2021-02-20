@@ -1,0 +1,4 @@
+---
+
+servers: "{{ groups['servers'] | map('extract', hostvars, ['public_ip']) | list }}"
+cameras: "{{ groups['cameras'] | map('extract', hostvars, ['public_ip']) | list }}"
