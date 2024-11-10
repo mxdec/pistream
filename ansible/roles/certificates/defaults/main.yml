@@ -1,0 +1,4 @@
+---
+
+certificates_tmp_dir: /tmp/certs
+certificates_dir: "{{ server_certs_dir }}"

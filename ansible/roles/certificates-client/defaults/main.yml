@@ -1,0 +1,5 @@
+---
+
+certificates_user: root
+certificates_group: root
+certificates_dir: "{{ client_certs_dir }}"

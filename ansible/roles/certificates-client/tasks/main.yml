@@ -1,0 +1,25 @@
+---
+
+- name: Ensure certificates directory exists
+  file:
+    path: "{{ certificates_dir }}"
+    state: directory
+    mode: '644'
+
+- name: Send the CA to the raspi
+  copy:
+    src: "/tmp/ca.crt"
+    dest: "{{ certificates_dir }}/ca.crt"
+    mode: '644'
+    owner: "{{ certificates_user }}"
+    group: "{{ certificates_user }}"
+
+- name: Send the client's public and private keys to the raspi
+  copy:
+    src: "/tmp/{{ item.name }}"
+    dest: "{{ certificates_dir }}/{{ item.name }}"
+    owner: "{{ certificates_user }}"
+    group: "{{ certificates_user }}"
+  with_items:
+  - { mode: '644', name: "client.crt" }
+  - { mode: '600', name: "client.key" }

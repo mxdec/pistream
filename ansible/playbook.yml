@@ -1,12 +1,15 @@
 ---
 
-- hosts: 'cameras'
-  become: yes
-  roles:
-  - camera
-
 - hosts: 'servers'
   become: yes
   roles:
   - common
+  - certificates
   - server
+
+
+- hosts: 'cameras'
+  become: yes
+  roles:
+  - certificates-client
+  - camera

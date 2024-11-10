@@ -6,3 +6,6 @@ nginx_group: www-data
 nginx_pid: /var/run/nginx.pid
 nginx_dir_log: /var/log/nginx
 nginx_dir_rec: /etc/nginx/rec
+
+# certificates location
+certificates_dir: "{{ server_certs_dir }}"

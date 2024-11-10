@@ -1,37 +1,55 @@
-user      {{ nginx_user }};
+user             {{ nginx_user }};
+pid              {{ nginx_pid }};
+error_log        {{ nginx_dir_log }}/error.log;
 worker_processes auto;
-error_log {{ nginx_dir_log }}/error.log;
-pid       {{ nginx_pid }};
 
 events {
     worker_connections  1024;
 }
 
 rtmp {
-    server {
-        listen 1935;
-        chunk_size 4096;
+  access_log  {{ nginx_dir_log }}/rtmp_live_access.log;
 
-        # logging
-        access_log {{ nginx_dir_log }}/rtmp_live_access.log;
+  server {
+    listen 127.0.0.1:19351;
+    chunk_size 4096;
 
-        application live {
-            # enable live streaming
-            live on;
+    application live {
+      live on;
 
-            # recording
-            record video;
-            record_path {{ nginx_dir_rec }};
-            record_interval 1h;
-            record_suffix -%F-%T.flv;
-
-            # receive stream
-            allow publish {{ cameras[0] }}; # authorize the Pi to push on /live
-            deny publish all;               # prevent anyone else to push video
-
-            # play stream
-            allow play {{ cameras[0] }};    # authorize this computer to play on /live
-            deny play all;                  # prevent anyone else to play video
-        }
+      # recording
+      record video;
+      record_path {{ nginx_dir_rec }};
+      record_interval 1h;
+      record_suffix -%F-%T.flv;
     }
+  }
+}
+
+stream {
+  log_format  basic   '$time_iso8601 $remote_addr '
+                      '$protocol $status $bytes_sent $bytes_received '
+                      '$session_time $upstream_addr '
+                      '"$upstream_bytes_sent" "$upstream_bytes_received" "$upstream_connect_time"';
+
+  access_log  {{ nginx_dir_log }}/stream.access.log basic;
+  error_log   {{ nginx_dir_log }}/stream.error.log;
+
+  upstream rtmp-server {
+    server                  127.0.0.1:19351;
+  }
+
+  server {
+    listen                  1935 ssl; # standard RTMP(S)
+
+    ssl_certificate         {{ certificates_dir }}/server.crt;
+    ssl_certificate_key     {{ certificates_dir }}/server.key;
+    ssl_protocols           TLSv1.2 TLSv1.3;
+    ssl_ciphers             HIGH:!aNULL:!MD5;
+
+    ssl_client_certificate  {{ certificates_dir }}/ca.crt;
+    ssl_verify_client       on;
+
+    proxy_pass              rtmp-server;
+  }
 }

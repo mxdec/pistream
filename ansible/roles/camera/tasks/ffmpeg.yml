@@ -6,6 +6,12 @@
     name: ffmpeg
     state: present
 
+- name: Ensure certificates directory exists
+  file:
+    path: "{{ certificates_dir }}"
+    state: directory
+    mode: '644'
+
 - name: Copy the systemd service file
   template:
     src: systemd/ffmpeg.service.j2

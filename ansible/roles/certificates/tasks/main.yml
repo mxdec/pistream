@@ -1,0 +1,140 @@
+---
+
+- name: Install cryptography package
+  become: yes
+  apt:
+    name: python3-cryptography
+    state: present
+
+- name: Ensure directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: 0755
+  with_items:
+  - { path: "{{ certificates_tmp_dir }}" }
+  - { path: "{{ certificates_dir }}" }
+
+# Generate the self-signed CA
+- name: Create CA private key
+  community.crypto.openssl_privatekey:
+    path: "{{ certificates_tmp_dir }}/ca.key"
+    size: 2048
+    type: "RSA"
+
+- name: Generate a CSR
+  community.crypto.openssl_csr:
+    path: "{{ certificates_tmp_dir }}/ca.csr"
+    privatekey_path: "{{ certificates_tmp_dir }}/ca.key"
+    common_name: own_ca
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage_critical: true
+    create_subject_key_identifier: true
+    use_common_name_for_san: false
+
+- name: Create self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "{{ certificates_tmp_dir }}/ca.crt"
+    csr_path: "{{ certificates_tmp_dir }}/ca.csr"
+    privatekey_path: "{{ certificates_tmp_dir }}/ca.key"
+    provider: selfsigned
+    owner: www-data
+    group: www-data
+
+# Generate the server certs
+- name: Create the server's private key
+  community.crypto.openssl_privatekey:
+    path: "{{ certificates_tmp_dir }}/server.key"
+    size: 2048
+    type: "RSA"
+    owner: www-data
+    group: www-data
+
+- name: Create the server's CSR
+  community.crypto.openssl_csr:
+    path: "{{ certificates_tmp_dir }}/server.csr"
+    privatekey_path: "{{ certificates_tmp_dir }}/server.key"
+    common_name: "{{ servers[0] }}"
+    use_common_name_for_san: false
+
+- name: Create server's public key
+  community.crypto.x509_certificate:
+    path: "{{ certificates_tmp_dir }}/server.crt"
+    csr_path: "{{ certificates_tmp_dir }}/server.csr"
+    provider: ownca
+    ownca_path: "{{ certificates_tmp_dir }}/ca.crt"
+    ownca_privatekey_path: "{{ certificates_tmp_dir }}/ca.key"
+    ownca_not_after: "+365d"
+    ownca_not_before: "-1d"
+    owner: www-data
+    group: www-data
+
+# Generate the client certs
+- name: Create the client's private key
+  community.crypto.openssl_privatekey:
+    path: "{{ certificates_tmp_dir }}/client.key"
+    size: 2048
+    type: "RSA"
+    owner: www-data
+    group: www-data
+
+- name: Create the client's CSR
+  community.crypto.openssl_csr:
+    path: "{{ certificates_tmp_dir }}/client.csr"
+    privatekey_path: "{{ certificates_tmp_dir }}/client.key"
+    common_name: "client"
+    use_common_name_for_san: false
+
+- name: Create client's public key
+  community.crypto.x509_certificate:
+    path: "{{ certificates_tmp_dir }}/client.crt"
+    csr_path: "{{ certificates_tmp_dir }}/client.csr"
+    provider: ownca
+    ownca_path: "{{ certificates_tmp_dir }}/ca.crt"
+    ownca_privatekey_path: "{{ certificates_tmp_dir }}/ca.key"
+    ownca_not_after: "+365d"
+    ownca_not_before: "-1d"
+    owner: www-data
+    group: www-data
+
+# Copy the server's certs
+- name: Copy the CA to the nginx client certs directory
+  copy:
+    src: "{{ certificates_tmp_dir }}/ca.crt"
+    dest: "{{ certificates_dir }}/ca.crt"
+    mode: '644'
+    owner: "www-data"
+    group: "www-data"
+    remote_src: yes
+
+- name: Copy the server's public and private keys to the ssl directory
+  copy:
+    src: "{{ certificates_tmp_dir }}/{{ item.name }}"
+    dest: "{{ certificates_dir }}/{{ item.name }}"
+    owner: "www-data"
+    group: "www-data"
+    remote_src: yes
+  with_items:
+  - { mode: '644', name: "server.crt" }
+  - { mode: '600', name: "server.key" }
+
+# Keep a copy of the required certs on the controller for the Raspberry Pi
+- name: Pull the CA from the remote
+  fetch:
+    src: "{{ certificates_tmp_dir }}/ca.crt"
+    dest: /tmp/ca.crt
+    flat: yes
+
+- name: Pull the public key from the remote
+  fetch:
+    src: "{{ certificates_tmp_dir }}/client.crt"
+    dest: /tmp/client.crt
+    flat: yes
+
+- name: Pull the private key from the remote
+  fetch:
+    src: "{{ certificates_tmp_dir }}/client.key"
+    dest: /tmp/client.key
+    flat: yes

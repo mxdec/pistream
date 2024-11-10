@@ -2,3 +2,4 @@
 
 ffmpeg_user: root
 ffmpeg_group: root
+certificates_dir: "{{ client_certs_dir }}"

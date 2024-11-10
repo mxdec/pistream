@@ -5,9 +5,13 @@ A playbook to setup your own video streaming system based on a Raspberry Pi with
 
 ## Introduction
 
-The objective of the project is to install your own private video streaming infrastructure, with the advantages of low bandwidth consumption and strong confidentiality guarantees. However, encoding video streams with expensive algorithms is impractical on a small device due to resource limitations.
-One approach attempts to perform the encoding portion in the cloud, streaming the raw video output to a remote server, which can cause network saturation due to ISP bandwidth limitations.
-The question is how to use the resources of the Rasperry Pi to deliver the best quality / compression ratio, in order to save network bandwidth.
+This project sets up a server to receive video streams from one or more Raspberry Pi cameras.
+
+The server can:
+- Store video streams: Save incoming video streams as files on the server.
+- Broadcast live feeds: Stream live video to RTMP-compatible clients like VLC.
+
+This setup is ideal for surveillance or real-time broadcasting projects involving Raspberry Pi cameras.
 
 
 ## Requirements
@@ -37,33 +41,25 @@ $ ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml
 ## System Design
 
 ```
-      Publisher                            Server                         Viewer       
-                                                                                       
-  ┌───────────────┐             ┌──────────────────────────┐             ┌───────┐     
-  │ Raspberry Pi  │             │ Streaming Server         │             │       │     
-  │               ├──┐          │                          │             │       │     
-  │ Camera 1      │  │          │ ┌──────────────────────┐ │     ┌──────▶│ Phone │     
-  └───────────────┘  │          │ │ Nginx                │ │     │       │       │     
-                     │          │ │                      │ │     │ rtmp  │       │     
-  ┌───────────────┐  │          │ │ - Receive stream     ├───────┤ hls   └───────┘     
+      Publisher                            Server                         Viewer
+
+  ┌───────────────┐             ┌──────────────────────────┐             ┌───────┐
+  │ Raspberry Pi  │             │ Streaming Server         │             │       │
+  │               ├──┐          │                          │             │       │
+  │ Camera 1      │  │          │ ┌──────────────────────┐ │     ┌──────▶│ Phone │
+  └───────────────┘  │          │ │ Nginx                │ │     │       │       │
+                     │          │ │                      │ │     │ rtmp  │       │
+  ┌───────────────┐  │          │ │ - Receive stream     ├───────┤ hls   └───────┘
   │ Raspberry Pi  │  └╖  rtmp   │ │ - Store video chunks │ │     │ dash  ┌────────────┐
   │               ├───║───────────▶ - Stream to viewers  │ │     │       │            │
   │ Camera 2      │  ┌╜         │ │                      │ │     └──────▶│            │
-  └───────────────┘  │          │ └──┬───────────────┬───┘ │             │ Computer   │
-                     │          │    │         write │     │             │            │
-  ┌───────────────┐  │          │    │  ┌────────────▼───┐ │             │            │
-  │ Raspberry Pi  │  │          │    │  │ Storage        │ │             └────────────┘
-  │               ├──┘          │    │  │ HDD / SDD      │ │                           
-  │ Camera N      │             │    │  └────────────────┘ │                           
-  └───────────────┘             └────│─────────────────────┘                           
-                                     │                                                 
-                                     │ rtmp                                            
-                                     │                                                 
-                                ┌────▼─────────────────────┐                           
-                                │ Restream to:             │                           
-                                │ - Twitch / Youtube       │                           
-                                │ - Backup                 │                           
-                                └──────────────────────────┘                           
+  └───────────────┘  │          │ └──────────────────┬───┘ │             │ Computer   │
+                     │          │              write │     │             │            │
+  ┌───────────────┐  │          │       ┌────────────▼───┐ │             │            │
+  │ Raspberry Pi  │  │          │       │ Storage        │ │             └────────────┘
+  │               ├──┘          │       │ HDD / SDD      │ │
+  │ Camera N      │             │       └────────────────┘ │
+  └───────────────┘             └──────────────────────────┘
 ```
 
 

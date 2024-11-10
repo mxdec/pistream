@@ -2,3 +2,7 @@
 
 servers: "{{ groups['servers'] | map('extract', hostvars, ['public_ip']) | list }}"
 cameras: "{{ groups['cameras'] | map('extract', hostvars, ['public_ip']) | list }}"
+
+# certificates location
+client_certs_dir: /etc/ssl/ffmpeg
+server_certs_dir: /etc/ssl/nginx

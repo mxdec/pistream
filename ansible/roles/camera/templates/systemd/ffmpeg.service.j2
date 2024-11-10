@@ -7,21 +7,24 @@ After=network-online.target
 User={{ ffmpeg_user }}
 Group={{ ffmpeg_group }}
 Type=simple
-ExecStart=/usr/bin/ffmpeg -f video4linux2        \
-                          -input_format h264     \
-                          -video_size 800x600    \
-                          -i /dev/video0         \
-                          -framerate 30          \
-                          -c:v h264_omx          \
-                          -preset medium         \
-                          -b:v 256k              \
-                          -maxrate 256k          \
-                          -bufsize 2048k         \
-                          -g 60                  \
-                          -an                    \
-                          -strict experimental   \
-                          -f flv                 \
-                          "rtmp://{{ servers[0] }}:1935/live/pi"
+ExecStart=/usr/bin/ffmpeg -f video4linux2                         \
+                          -input_format h264                      \
+                          -video_size 800x600                     \
+                          -i /dev/video0                          \
+                          -framerate 30                           \
+                          -c:v h264_omx                           \
+                          -preset medium                          \
+                          -b:v 256k                               \
+                          -maxrate 256k                           \
+                          -bufsize 2048k                          \
+                          -g 60                                   \
+                          -an                                     \
+                          -strict experimental                    \
+                          -f flv                                  \
+                          -cert_file {{ certificates_dir }}/client.crt \
+                          -key_file {{ certificates_dir }}/client.key  \
+                          "rtmps://{{ servers[0] }}:1935/live/pi"
+
 Restart=always
 RestartSec=10
 
